@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*- 
+# 한글 인코딩 처리
 from builtins import range
 import numpy as np
 
@@ -27,8 +29,8 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    dim_size = x[0].shape 
-    # input의 차원만큼 차원설정
+    dim_size = x[0].shape
+    # input의 차원 만큼 차원 설정
     X = x.reshape(x.shape[0],np.prod(dim_size))
     # np.prod는 행렬의 요소들을 다 곱해줌
     out = X.dot(w)+b
@@ -842,3 +844,4 @@ def softmax_loss(x, y):
     dx[np.arange(N), y] -= 1
     dx /= N
     return loss, dx
+

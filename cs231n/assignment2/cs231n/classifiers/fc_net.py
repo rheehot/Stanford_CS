@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*- 
+# 한글 인코딩
 from builtins import range
 from builtins import object
 import numpy as np
