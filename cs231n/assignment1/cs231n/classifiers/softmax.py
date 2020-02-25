@@ -35,7 +35,7 @@ def softmax_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    scores = X.dow(W) # W x X
+    scores = X.dot(W) # W x X
     num_train = X.shape[0] # X의 행 개수(세로)
     num_classes = W.shape[1] # W의 열 개수(가로)
 

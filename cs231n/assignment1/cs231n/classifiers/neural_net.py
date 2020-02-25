@@ -83,7 +83,7 @@ class TwoLayerNet(object):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         # forward 연산
         fc1 = X.dot(W1) + b1 # N x D , D x H
-        X2 = np.maximum(0,fc1) # N x H
+        X2 = np.maximum(0,fc1) # N x H , ReLU
         scores = X2.dot(W2) + b2 # N X H , H x C
         
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -94,6 +94,7 @@ class TwoLayerNet(object):
 
         # Compute the loss
         loss = None
+        # loss 는 스칼라 값이 나와야함 
         #############################################################################
         # TODO: Finish the forward pass, and compute the loss. This should include  #
         # both the data loss and L2 regularization for W1 and W2. Store the result  #
@@ -105,16 +106,17 @@ class TwoLayerNet(object):
 #           an integer in the range 0 <= y[i] < C. This parameter is optional; if it
 #           is not passed then we only return scores, and if it is passed then we
 #           instead return the loss and gradients
-        # 가장 큰 열의 원소를 꺼내서 열 단위로 빼줌
-        # 차원의 축소 방지 
+        
         scores -= np.max(scores, axis=1, keepdims = True) # avoid numeric instability
         # 좀 더 오류가 덜 나기때문에. 컴퓨터의 소수점 연산을 피해주기 위해서
+        # 가장 큰 열의 원소를 꺼내서 열 단위로 빼줌
+        # 차원의 축소 방지 
         scores_exp = np.exp(scores) # N x C
         softmax_matrix = scores_exp / np.sum(scores_exp , axis =1 , keepdims=True)
-        # N x C
+        # N x C, softmax로 만들어줌
         loss = np.sum(-np.log(softmax_matrix[np.arange(N),y]))
-        # 이진 크로스 엔트로피
-        # np.arange(N) = 0~N-1 까지의 배열 만들어줌
+        # cross Entropy loss 
+        # np.arange(N) = 0~N-1 까지의 배열 만들어줌 , y가 target label
         # softmax_matrix[] np.arange(N)안에서의 인덱스를 골라냄
         loss /= N
         loss += reg * (np.sum(W2*W2)+ np.sum(W1*W1))
@@ -131,9 +133,9 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        softmax_matrix[np.arrange(N),y] -= 1 
+        softmax_matrix[np.arange(N),y] -= 1 
         # one-hot의 class index 해당 유닛에 -1 해줌
-        sofrmax_matrix /= N
+        softmax_matrix /= N
         # 평균화
 
         # W2 gradient
@@ -146,7 +148,9 @@ class TwoLayerNet(object):
 
         # W1 gradient
         dW1 = softmax_matrix.dot(W2.T)   # [NxC] * [CxH] = [NxH]
+        # dL(loss)ds(softmax) * dsdW2
         dfc1 = dW1 * (fc1>0)             # [NxH] . [NxH] = [NxH]
+        # ReLU 역전파
         # fc1 = X.dot(W1) + b1
         dW1 = X.T.dot(dfc1)              # [DxN] * [NxH] = [DxH]
 
@@ -234,6 +238,7 @@ class TwoLayerNet(object):
                 # Check accuracy
                 train_acc = (self.predict(X_batch) == y_batch).mean()
                 val_acc = (self.predict(X_val) == y_val).mean()
+                # 얼마나 정확한지에 대한 정확도
                 train_acc_history.append(train_acc)
                 val_acc_history.append(val_acc)
 
@@ -268,8 +273,9 @@ class TwoLayerNet(object):
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        y_pred = np.argmax( self.loss(X), axis=1)
-
+        y_pred = np.argmax(self.loss(X), axis=1)
+        # axis= 0 이면 가로, axis = 1 이면 세로 끼리,
+        # 가장 큰 값을 가지고있는 index를 리턴함
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         return y_pred

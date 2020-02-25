@@ -35,6 +35,7 @@ def extract_features(imgs, feature_fns, verbose=False):
     first_image_features = []
     for feature_fn in feature_fns:
         feats = feature_fn(imgs[0].squeeze())
+        # 차원의 원소가 1인 차원을 없애줌
         assert len(feats.shape) == 1, 'Feature functions must be one-dimensional'
         feature_dims.append(feats.size)
         first_image_features.append(feats)
@@ -94,6 +95,7 @@ def hog_feature(im):
         image = rgb2gray(im)
     else:
         image = np.at_least_2d(im)
+        # 2차원 배열로 만들어줌
 
     sx, sy = image.shape # image size
     orientations = 9 # number of gradient bins
@@ -102,9 +104,14 @@ def hog_feature(im):
     gx = np.zeros(image.shape)
     gy = np.zeros(image.shape)
     gx[:, :-1] = np.diff(image, n=1, axis=1) # compute gradient on x-direction
+    # 마지막 항 빼고 차분, 가로 방향끼리 뺌
     gy[:-1, :] = np.diff(image, n=1, axis=0) # compute gradient on y-direction
+    # 마지막 항 빼고 차분, 세로 방향끼리 뺌
     grad_mag = np.sqrt(gx ** 2 + gy ** 2) # gradient magnitude
-    grad_ori = np.arctan2(gy, (gx + 1e-15)) * (180 / np.pi) + 90 # gradient orientation
+    # 기울기 크기 구해줌
+    grad_ori = np.arctan2(gy, (gx + 1e-15)) * (180 / np.pi) + 90 
+    # gradient orientation
+    # 기울기 방향 구해줌
 
     n_cellsx = int(np.floor(sx / cx))  # number of cells in x
     n_cellsy = int(np.floor(sy / cy))  # number of cells in y
@@ -120,9 +127,11 @@ def hog_feature(im):
         # select magnitudes for those orientations
         cond2 = temp_ori > 0
         temp_mag = np.where(cond2, grad_mag, 0)
-        orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=(cx, cy))[round(cx/2)::cx, round(cy/2)::cy].T
+        orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=(cx, cy))[int(cx/2)::cx, int(cy/2)::cy].T
+        # 정규화 필터를 적용해줌 = 가우시안???
 
     return orientation_histogram.ravel()
+# ravel = flatten
 
 
 def color_histogram_hsv(im, nbin=10, xmin=0, xmax=255, normalized=True):

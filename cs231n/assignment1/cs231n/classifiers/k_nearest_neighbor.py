@@ -59,6 +59,7 @@ class KNearestNeighbor(object):
         Compute the distance between each test point in X and each training point
         in self.X_train using a nested loop over both the training data and the
         test data.
+        # X = test point , self.X = training point
 
         Inputs:
         - X: A numpy array of shape (num_test, D) containing test data.
@@ -70,7 +71,7 @@ class KNearestNeighbor(object):
         """
         num_test = X.shape[0]
         num_train = self.X_train.shape[0]
-        dists = np.zeros((num_test, num_train)) #유클리디안 거리 구해서 행렬에 값 넣어줌
+        dists = np.zeros((num_test, num_train)) 
         for i in range(num_test):
             for j in range(num_train):
                 #####################################################################
@@ -81,7 +82,8 @@ class KNearestNeighbor(object):
                 #####################################################################
                 # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-                dist[i][j] = np.sqrt(np.sum((X[i] - self.X_train[j])**2))
+                dists[i][j] = np.sqrt(np.sum((X[i] - self.X_train[j]) **2))
+                # 유클리디안 거리 구해서 행렬에 값 넣어줌
                 # test - train 의 제곱해주고 다시 루트씌워줌
 
                 # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -172,6 +174,8 @@ class KNearestNeighbor(object):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
             closest_y = self.y_train[np.argsort(dists[i])][0:k]
+            # dists 는 2차원 배열
+            # [0:k] 0부터 k-1까지 출력
             # argsort 는 넘파이 배열의 원소를 오름차순으로 정렬하는 메소드. 배열의 인덱스를 반환
 
 
@@ -186,6 +190,7 @@ class KNearestNeighbor(object):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
             y_pred[i] = np.bincount(closest_y).argmax()
+            # argmax는 가장 큰 인덱스를 반환
             # bincount()는 0 부터 객체x의 최대값인 9까지 각 원소의 빈도수를 계산
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
