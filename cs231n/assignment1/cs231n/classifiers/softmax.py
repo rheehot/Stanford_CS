@@ -25,7 +25,7 @@ def softmax_loss_naive(W, X, y, reg):
     """
     # Initialize the loss and gradient to zero.
     loss = 0.0
-    dW = np.zeros_like(W)
+    dW = np.zeros_like(W) # D x C
     # W 차원만큼 0 행렬 만들어줌
     #############################################################################
     # TODO: Compute the softmax loss and its gradient using explicit loops.     #

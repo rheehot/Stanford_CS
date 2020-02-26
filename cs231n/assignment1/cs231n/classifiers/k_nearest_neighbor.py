@@ -26,7 +26,7 @@ class KNearestNeighbor(object):
         """
         self.X_train = X
         self.y_train = y
-        # 기억한다고 생각하자
+        # 학습 데이터를 기억
 
     def predict(self, X, k=1, num_loops=0):
         """

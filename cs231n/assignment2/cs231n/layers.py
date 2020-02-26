@@ -12,6 +12,10 @@ def affine_forward(x, w, b):
     examples, where each example x[i] has shape (d_1, ..., d_k). We will
     reshape each input into a vector of dimension D = d_1 * ... * d_k, and
     then transform it to an output vector of dimension M.
+    
+    N개의 미니배치를 포함 x.shape = (N,K)
+    우리는 각 input이 D 차원의 vector로 reshape 할거다. 그리고 M 차원 벡터인
+    output 벡터로 변형한다 
 
     Inputs:
     - x: A numpy array containing input data, of shape (N, d_1, ..., d_k)
@@ -29,12 +33,16 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    dim_size = x[0].shape
+    dim_size = x[0].shape # x.shape = N x D
+    # X 의 0번째 배열의 shape
     # input의 차원 만큼 차원 설정
     X = x.reshape(x.shape[0],np.prod(dim_size))
+    # X = N x D 이 나와야함 
+    # w = D x M
+    # x를 행 : x.shape[0]만큼 열 : np.prod(dim_size) 만큼 reshape
     # np.prod는 행렬의 요소들을 다 곱해줌
-    out = X.dot(w)+b
-    # F = Wx+b 인데 Wx는 내적 
+    out = X.dot(w)+b # N x M 이 나와야함
+    # F = Wx+b  
     
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -66,14 +74,16 @@ def affine_backward(dout, cache):
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    dim_shape = np.prod(x[0].shape) # 차원 개수 
+    dim_shape = np.prod(x[0].shape) # 차원 개수의 곱
     N = x.shape[0]
     X = x.reshape(N, dim_shape)   # N차원을 dim_shape차원으로 바꿔줌
     # input gradient
     dx = dout.dot(w.T) # dout은 input, dout과 w.T와 내적
+    # dout.shape = N x M , w.T = M x D, dx = N x D
     dx = dx.reshape(x.shape)
     # weight gradient
     dw = X.T.dot(dout) # x.T 와 dout 내적
+    # dx = D x M , X.T = D x N , dout = N x M 
     # bias gradient
     db = dout.sum(axis=0) # dout 의 합
 
@@ -138,12 +148,14 @@ def relu_backward(dout, cache):
 def batchnorm_forward(x, gamma, beta, bn_param):
     """
     Forward pass for batch normalization.
-
+    Training 할 때는 mini-batch의 평균과 분산으로 normalize한다.
+    
     During training the sample mean and (uncorrected) sample variance are
     computed from minibatch statistics and used to normalize the incoming data.
     During training we also keep an exponentially decaying running mean of the
     mean and variance of each feature, and these averages are used to normalize
     data at test-time.
+    Test 할 때는 계산해놓은 이동 평균으로 normalize
 
     At each timestep we update the running averages for mean and variance using
     an exponential decay based on the momentum parameter:
@@ -209,15 +221,14 @@ def batchnorm_forward(x, gamma, beta, bn_param):
 
         mu = x.mean(axis=0)
         var = x.var(axis=0) + eps # eps = 상수
-        std = np.sqrt(var)
-        z = (x-mu) / std
+        std = np.sqrt(var) # 분산의 제곱근 = 표준편차
+        z = (x-mu) / std 
         out = gamma * z + beta # gamma는 스케일, beta는 shift
 
         if layernorm == 0:
-          running_mean = momentum * running_mean + (1-momentum) * mu
-          running_var = momentum * running_var + (1-momentum) * (std**2)
-
-        cache={'x':x,'mean':mu,'std':std,'gamma':gamma,'z':z,'var':var,'axis':layernorm}
+            running_mean = momentum * running_mean + (1-momentum) * mu
+            running_var = momentum * running_var + (1-momentum) * (std**2)
+            cache={'x':x,'mean':mu,'std':std,'gamma':gamma,'z':z,'var':var,'axis':layernorm}
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -233,7 +244,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         out = gamma * (x - running_mean) / np.sqrt(running_var + eps) + beta
-
+        # Test 시에는 계산해놓은 이동 평균으로 test
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
         #                          END OF YOUR CODE                           #
@@ -273,17 +284,18 @@ def batchnorm_backward(dout, cache):
     # might prove to be helpful.                                              #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+    # out = gamma * (x - running_mean) / np.sqrt(running_var + eps) + beta
     dbeta = dout.sum(axis = cache['axis'])
     dgamma = np.sum(dout * cache['z'], axis = cache['axis'])
-
+    # z = (x-mu) / std 
     N = 1.0 * dout.shape[0]
     dfdz = dout * cache['gamma']
-    dudx = 1/N
-    dvdx = 2/N * (cache['x'] - cache['mean'])
+    dudx = 1/N # u = mu
+    dvdx = 2/N * (cache['x'] - cache['mean']) # v = var
     dzdx = 1 / cache['std']
     dzdu = -1 / cache['std']
     dzdv = -0.5*(cache['var']**-1.5)*(cache['x']-cache['mean'])
+    # z 를 분산에 대하여 미분
     dvdu = -2/N * np.sum(cache['x'] -cache['mean'], axis=0)
 
     dx = dfdz*dzdx + np.sum(dfdz*dzdu,axis=0)*dudx + \
@@ -375,8 +387,11 @@ def layernorm_forward(x, gamma, beta, ln_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
-
+    ln_param['mode'] = 'train'
+    ln_parma['layernorm'] = 1
+    out,cache = batchnorm_forward(x.T, gamma.reshape(-1,1),
+                                 bea.reshape(-1,1), ln_param)
+    out = out.T
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -410,7 +425,8 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx , dgamma, dbeta = batchnorm_backword_alt(dout.T , cache)
+    dx = dx.T
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -459,7 +475,11 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        mask = ( np.random.rand(*x.shape) < p) / p
+        # np.random.rand(*x.shape) = x.shape 크기만큼의 난수 배열 만들어줌
+        # 그 중 p 보다 작은 값들을 p 로 나눠줌
+        out = x * mask
+        # mask 된 뉴런들로만 학습
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -471,7 +491,8 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        out = x
+        # 전체 테스트
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -502,7 +523,7 @@ def dropout_backward(dout, cache):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        dx = dout * mask
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -523,6 +544,7 @@ def conv_forward_naive(x, w, b, conv_param):
 
     Input:
     - x: Input data of shape (N, C, H, W)
+    # N은 이미지 수
     - w: Filter weights of shape (F, C, HH, WW)
     - b: Biases, of shape (F,)
     - conv_param: A dictionary with the following keys:
@@ -548,7 +570,43 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    pad = conv_param['pad']
+    stride = conv_param['stride']
+    N, C, H, W = x.shape
+    F, C, FH, FW = w.shape
+
+    assert (H - FH + 2 * pad) % stride == 0
+    assert (W - FW + 2 * pad) % stride == 0
+    # stride 으로 나눴을 때 0 나오면 컴파일 오류
+    outH = 1 + (H - FH + 2 * pad) / stride
+    # outH 크기 설정
+    outW = 1 + (W - FW + 2 * pad) / stride
+    # outW 크기 설정
+    # create output tensor after convolution layer
+    out = np.zeros((N, F, outH, outW)) # N x F x outH x outW
+    # out.shape N = 데이터 개수 , F = 필터의 개수 
+    # padding all input data
+    x_pad = np.pad(x, ((0,0), (0,0),(pad,pad),(pad,pad)), 'constant')
+    # x = input_image.shape = (N, C, H, W) , 패딩 설정
+    H_pad, W_pad = x_pad.shape[2], x_pad.shape[3]    
+
+    # create w_row matrix
+    w_row = w.reshape(F, C*FH*FW)                            #[F x C*FH*FW]
+    
+    # create x_col matrix with values that each neuron is connected to
+    x_col = np.zeros((C*FH*FW, outH*outW))                   #[C*FH*FW x outH*outW]
+    
+    # 
+    for index in range(N):
+        neuron = 0 
+        for i in range(0, H_pad-FH+1, stride):
+            for j in range(0, W_pad-FW+1,stride):
+                x_col[:,neuron] = x_pad[index,:,i:i+FH,j:j+FW].reshape(C*FH*FW)
+                # index번째 데이터부터 채널은 전부
+                # FH 부터 시작 height 이동, FW 부터 시작 width 이동하면서 x_col에 값을 넣어줌
+                neuron += 1
+        out[index] = (w_row.dot(x_col) + b.reshape(F,1)).reshape(F, outH, outW)
+        # (w_row 와 x_col 내적 + b )shape = F x outH * outW
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -577,7 +635,45 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x_pad, w, b, conv_param = cache
+    N, F, outH, outW = dout.shape
+    # out = conv 연산
+    N, C, Hpad, Wpad = x_pad.shape
+    # x_pad = 패딩과정을 거친 x, 
+    FH, FW = w.shape[2], w.shape[3]
+    # w.shape = F x C x HH x WW
+    stride = conv_param['stride']
+    pad = conv_param['pad']
+
+    # initialize gradients
+    dx = np.zeros((N, C, Hpad - 2*pad, Wpad - 2*pad))
+    # 다시 패딩값 빼줘야함
+    dw, db = np.zeros(w.shape), np.zeros(b.shape)
+    # w.shape , b.shape 크기만큼 초기화
+    # create w_row matrix
+    w_row = w.reshape(F, C*FH*FW)                            #[F x C*FH*FW]
+
+    # create x_col matrix with values that each neuron is connected to
+    x_col = np.zeros((C*FH*FW, outH*outW))                   #[C*FH*FW x H'*W']
+    for index in range(N):
+        out_col = dout[index].reshape(F, outH*outW)          #[F x H'*W']
+        w_out = w_row.T.dot(out_col)                         #[C*FH*FW x H'*W']
+        # w_out = w_row , out_col의 내적
+        dx_cur = np.zeros((C, Hpad, Wpad))
+        neuron = 0
+        for i in range(0, Hpad-FH+1, stride):
+            for j in range(0, Wpad-FW+1, stride):
+                dx_cur[:,i:i+FH,j:j+FW] += w_out[:,neuron].reshape(C,FH,FW)
+                # w_out = w_rot(가중치 행렬), out_col(upstream 미분값) 과의 내적
+                # 그 값을 dx_cur에 넣어줌
+                x_col[:,neuron] = x_pad[index,:,i:i+FH,j:j+FW].reshape(C*FH*FW) 
+                # i = FH 부터 , j =  FW 부터 시작
+                neuron += 1
+        dx[index] = dx_cur[:,pad:-pad, pad:-pad]
+        # 이렇게 넣으면 dx[index] = dx_cur의 1차원만 다 들어감
+        dw += out_col.dot(x_col.T).reshape(F,C,FH,FW)
+        # 가중치 갱신
+        db += out_col.sum(axis=1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -611,8 +707,29 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
-
+    N, C, H, W = x.shape
+    stride = pool_param['stride']
+    PH = pool_param['pool_height']
+    PW = pool_param['pool_width']
+    outH = 1 + (H - PH) / stride
+    outW = 1 + (W - PW) / stride
+    # pooling 연산에는 padding 안줌
+    # create output tensor for pooling layer
+    out = np.zeros((N, C, outH, outW))
+    # N x C x outH x outW
+    for index in range(N):
+        out_col = np.zeros((C, outH*outW))
+        # C x outH x outW
+        neuron = 0
+        for i in range(0, H - PH + 1, stride):
+            for j in range(0, W - PW + 1, stride):
+                pool_region = x[index,:,i:i+PH,j:j+PW].reshape(C,PH*PW)
+                # 
+                out_col[:,neuron] = pool_region.max(axis=1)
+                # maxpooling 값 out_col에 넣어줌
+                neuron += 1
+        out[index] = out_col.reshape(C, outH, outW)
+        # C x outH x outW
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -638,7 +755,28 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, pool_param = cache
+    N, C, outH, outW = dout.shape
+    H, W = x.shape[2], x.shape[3]
+    stride = pool_param['stride']
+    PH, PW = pool_param['pool_height'], pool_param['pool_width']
+
+    # initialize gradient
+    dx = np.zeros(x.shape)
+    
+    for index in range(N):
+        dout_row = dout[index].reshape(C, outH*outW)
+        neuron = 0
+        for i in range(0, H-PH+1, stride):
+            for j in range(0, W-PW+1, stride):
+                pool_region = x[index,:,i:i+PH,j:j+PW].reshape(C,PH*PW)
+                max_pool_indices = pool_region.argmax(axis=1)
+                dout_cur = dout_row[:,neuron]
+                neuron += 1
+                # pass gradient only through indices of max pool
+                dmax_pool = np.zeros(pool_region.shape)
+                dmax_pool[np.arange(C),max_pool_indices] = dout_cur
+                dx[index,:,i:i+PH,j:j+PW] += dmax_pool.reshape(C,PH,PW)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
