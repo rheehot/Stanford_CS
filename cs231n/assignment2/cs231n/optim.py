@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*- 
+# 한글 인코딩 처리
 import numpy as np
 
 """
@@ -67,7 +69,8 @@ def sgd_momentum(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    v = config['momentum'] * v - config['learning_rate'] * dw
+    next_w = w + v
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -81,6 +84,7 @@ def sgd_momentum(w, dw, config=None):
 
 def rmsprop(w, dw, config=None):
     """
+    지수 가중 이동 평균 , 최신 기울기들이 더 많이 반영되도록 
     Uses the RMSProp update rule, which uses a moving average of squared
     gradient values to set adaptive per-parameter learning rates.
 
@@ -105,7 +109,13 @@ def rmsprop(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    eps, learning_rate = config['epsilon'], config['learning_rate']
+    beta, v = config['decay_rate'], config['cache']
+    # RMSprop
+    v = beta * v + (1 - beta) * (dw * dw)        # exponential weighted average
+    # v는 현재 값, 가중치는 beta
+    next_w = w - learning_rate * dw / (np.sqrt(v) + eps)
+    config['cache'] = v
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -149,7 +159,18 @@ def adam(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    eps, learning_rate = config['epsilon'], config['learning_rate']
+    beta1, beta2 = config['beta1'], config['beta2']
+    m, v, t = config['m'], config['v'], config['t']
+    # Adam
+    t = t + 1
+    m = beta1 * m + (1 - beta1) * dw          # momentum
+    mt = m / (1 - beta1**t)                   # bias correction
+    v = beta2 * v + (1 - beta2) * (dw * dw)   # RMSprop
+    vt = v / (1 - beta2**t)                   # bias correction
+    next_w = w - learning_rate * mt / (np.sqrt(vt) + eps)
+    # update values
+    config['m'], config['v'], config['t'] = m, v, t
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
